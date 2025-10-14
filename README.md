@@ -20,6 +20,10 @@ Fast, lightweight, and designed for security engineers who want immediate reconn
 - Lightweight UI for quick runs and detailed results with request/response snapshots.
 - Open source and free to use.
 
+## Demo
+
+[![FlashFuzz Demo](https://img.youtube.com/vi/hrwVM4qyQMA/0.jpg)](https://www.youtube.com/watch?v=hrwVM4qyQMA)
+
 ## Installation
 
 1. Download the latest release from the [Releases](https://github.com/Ademking/FlashFuzz/releases) page.
