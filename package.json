@@ -1,8 +1,8 @@
 {
   "name": "flashfuzz",
   "displayName": "FlashFuzz",
-  "version": "0.0.1",
-  "description": "CyberSecurity Browser Extension",
+  "version": "1.0.0",
+  "description": "Rapid URL fuzzing & secret scanning, right in your browser",
   "author": "Adem Kouki <ademkingnew@gmail.com>",
   "scripts": {
     "dev": "plasmo dev",

@@ -314,11 +314,25 @@ const Popup = () => {
           </div>
         </div>
       </div>
-
       {/* Footer */}
-      <div className="px-3 py-2 border-t border-gray-800 bg-gray-900/70 flex justify-end">
-        <span className="text-[10px] font-semibold text-gray-500">
-          By Adem KOUKI
+      <div className="px-4 py-2 border-t border-gray-800 bg-gray-900/90 flex justify-center items-center text-xs font-mono text-gray-400 space-x-3">
+        <a
+          href="https://github.com/Ademking/FlashFuzz"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-gray-300 hover:text-white font-mono transition-colors duration-200 hover:underline">
+          Give FlashFuzz a star! ⭐
+        </a>
+        <span className="text-gray-500">|</span>
+        <span>
+          Created by{" "}
+          <a
+            href="https://github.com/Ademking"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-gray-300 hover:text-white font-mono transition-colors duration-200 underline">
+            Adem Kouki
+          </a>
         </span>
       </div>
     </div>
