@@ -26,12 +26,23 @@ Fast, lightweight, and designed for security engineers who want immediate reconn
 
 ## Installation
 
-1. Download the latest release from the [Releases](https://github.com/Ademking/FlashFuzz/releases) page.
-2. Open Chrome and navigate to `chrome://extensions/`.
-3. Enable "Developer mode" using the toggle in the top right corner.
-4. Click "Load unpacked" and select the downloaded extension folder.
-5. The FlashFuzz icon should now appear in your browser toolbar. You may need to pin it for easy access.
+## Installation
+
+### Chrome / Chromium-based browsers (Developer / Unpacked)
+1. Download the latest release from the [Releases](https://github.com/Ademking/FlashFuzz/releases) page and unzip the archive.
+2. Open Chrome (or another Chromium-based browser) and navigate to `chrome://extensions/`.
+3. Enable **Developer mode** using the toggle in the top-right corner.
+4. Click **Load unpacked** and select the extracted extension folder.
+5. The FlashFuzz icon should appear in your browser toolbar — pin it if you want quick access.
 6. Click the icon to open the extension and start fuzzing!
+
+---
+
+### Firefox (Temporary Add-on / Developer)
+1. Download the latest release from the [Releases](https://github.com/Ademking/FlashFuzz/releases) page and unzip the archive.
+2. Open Firefox and navigate to `about:debugging#/runtime/this-firefox`.
+3. Click **Load Temporary Add-on…** and select the downloaded zip file.
+4. Click the FlashFuzz toolbar icon to open and start fuzzing.
 
 ## Usage
 
