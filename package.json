@@ -35,7 +35,13 @@
   },
   "manifest": {
     "host_permissions": [
-      "https://*/*"
-    ]
+      "https://*/*",
+      "http://*/*"
+    ],
+    "browser_specific_settings": {
+      "gecko": {
+        "id": "ademking@flashfuzz"
+      }
+    }
   }
 }
