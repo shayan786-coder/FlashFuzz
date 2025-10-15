@@ -26,8 +26,6 @@ Fast, lightweight, and designed for security engineers who want immediate reconn
 
 ## Installation
 
-## Installation
-
 ### Chrome / Chromium-based browsers (Developer / Unpacked)
 1. Download the latest release from the [Releases](https://github.com/Ademking/FlashFuzz/releases) page and unzip the archive.
 2. Open Chrome (or another Chromium-based browser) and navigate to `chrome://extensions/`.
