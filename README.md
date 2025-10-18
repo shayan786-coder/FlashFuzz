@@ -4,6 +4,13 @@
  <h1 align="center">FlashFuzz</h1>
     <p align="center">A Browser Extension for Quick URL Fuzzing and Secret Scanning</p>
 
+
+<p align="center">    
+   <a href="https://chromewebstore.google.com/detail/flashfuzz/hfpcijmfjcedpocpbpofaompilnglpef"><img src="./chrome.svg"></a>
+   <a href="https://addons.mozilla.org/en-US/firefox/addon/betterviewer"><img src="./firefox.svg"></a>
+</p>
+
+
 Fast, lightweight, and designed for security engineers who want immediate reconnaissance without leaving the browser. Quickly identify hidden endpoints and potential secrets across all open tabs.
 
 <p align="center">
