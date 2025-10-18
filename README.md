@@ -7,7 +7,7 @@
 
 <p align="center">    
    <a href="https://chromewebstore.google.com/detail/flashfuzz/hfpcijmfjcedpocpbpofaompilnglpef"><img src="./chrome.svg"></a>
-   <a href="https://addons.mozilla.org/en-US/firefox/addon/betterviewer"><img src="./firefox.svg"></a>
+   <a href="https://addons.mozilla.org/en-US/firefox/addon/flashfuzz"><img src="./firefox.svg"></a>
 </p>
 
 
@@ -33,7 +33,7 @@ Fast, lightweight, and designed for security engineers who want immediate reconn
 
 ## Installation
 
-You can install FlashFuzz either directly from the [Chrome Web Store](https://chromewebstore.google.com/detail/flashfuzz/hfpcijmfjcedpocpbpofaompilnglpef) or [Firefox Add-ons](https://addons.mozilla.org/en-US/firefox/addon/betterviewer), or install it manually if you prefer the developer / unpacked workflow.
+You can install FlashFuzz either directly from the [Chrome Web Store](https://chromewebstore.google.com/detail/flashfuzz/hfpcijmfjcedpocpbpofaompilnglpef) or [Firefox Add-ons](https://addons.mozilla.org/en-US/firefox/addon/flashfuzz), or install it manually if you prefer the developer / unpacked workflow.
 
 ### Chrome / Chromium-based browsers (Developer / Unpacked)
 1. Download the latest release from the [Releases](https://github.com/Ademking/FlashFuzz/releases) page and unzip the archive.
