@@ -1,10 +1,10 @@
 import cssText from "data-text:~style.css"
+import { Check, CopyIcon, Download, Info } from "lucide-react"
 import type { PlasmoCSConfig } from "plasmo"
 import React, { useEffect, useRef, useState } from "react"
 
 import { useStorage } from "@plasmohq/storage/hook"
 
-import { Collapse } from "~collapsed"
 import Logo from "~logo"
 import { SECRET_PATTERNS } from "~patterns"
 
@@ -75,6 +75,14 @@ const getAllPageJS = async () => {
     return ""
   }
 }
+// Format bytes to human-readable string
+function formatBytes(bytes: number): string {
+  if (!bytes || bytes === 0) return "0 B"
+  const k = 1024
+  const sizes = ["B", "KB", "MB", "GB", "TB"]
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i]
+}
 
 function findSecretsWithContext(jsText: string): MatchResult[] {
   const results: MatchResult[] = []
@@ -111,6 +119,16 @@ function findSecretsWithContext(jsText: string): MatchResult[] {
   }
 
   return Array.from(unique.values()).sort((a, b) => a.line - b.line)
+}
+
+function isExcludedSite(url: string, excludedSites: string): boolean {
+  const siteList = excludedSites
+    .split(/\r?\n|,/)
+    .map((s) => s.trim())
+    .filter(Boolean)
+  return siteList.some(
+    (site) => url.includes(site) || window.location.hostname.includes(site)
+  )
 }
 
 const checkUrlsIncremental = async (
@@ -226,7 +244,7 @@ const Main = ({ wordlists }) => {
   const [repeatedSizesThreshold] = useStorage<number>(REPEATED_SIZES_KEY, 5)
 
   // Function to save results to a text file
-  const handleSaveResults = () => {
+  const handleSaveResultsAsTXT = () => {
     if (foundUrls.length === 0 && foundSecrets.length === 0) return
 
     const now = new Date()
@@ -241,7 +259,9 @@ URL\tSize (bytes)
     const urlsBody = foundUrls
       .map(
         ({ url, size }) =>
-          `${window.location.origin}/${url}\t${size ?? "unknown"}`
+          `${window.location.origin}/${url}\t${
+            size ? formatBytes(size) : "unknown"
+          }`
       )
       .join("\n")
 
@@ -265,6 +285,28 @@ Type\tMatch
     URL.revokeObjectURL(url)
   }
 
+  const handleSaveResultsAsJSON = () => {
+    if (foundUrls.length === 0 && foundSecrets.length === 0) return
+    const now = new Date()
+    const results = {
+      pageScanned: window.location.href,
+      dateScanned: now.toISOString(),
+      urls: foundUrls.map(({ url, size }) => ({
+        url: `${window.location.origin}/${url}`,
+        size: size ? formatBytes(size) : "unknown"
+      })),
+      secrets: foundSecrets
+    }
+    const jsonContent = JSON.stringify(results, null, 2)
+    const blob = new Blob([jsonContent], { type: "application/json" })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = "flashfuzz_results.json"
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
   const handleCopyToClipboard = () => {
     if (foundUrls.length === 0 && foundSecrets.length === 0) return
 
@@ -277,7 +319,9 @@ URL\tSize (bytes)
     const urlsBody = foundUrls
       .map(
         ({ url, size }) =>
-          `${window.location.origin}/${url}\t${size ?? "unknown"}`
+          `${window.location.origin}/${url}\t${
+            size ? formatBytes(size) : "unknown"
+          }`
       )
       .join("\n")
     const secretsHeader = `\nSecrets:\nType\tMatch\n--------------------------------`
@@ -578,9 +622,21 @@ URL\tSize (bytes)
                 <span className="text-[10px] text-yellow-200">
                   {reqCount}/{totalRequests} requests
                 </span>
-                <div
-                  className={`w-full h-1 mt-2 rounded-full bg-gradient-to-r from-gray-400/25 via-yellow-500 to-gray-400/25 ${paused ? "" : "animate-pulse"}`}
-                />
+                <div className="w-full h-3 mt-2 rounded-full bg-gray-700 border border-gray-600 relative">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-yellow-400 to-yellow-600 transition-all duration-300"
+                    style={{
+                      width: `${totalRequests > 0 ? Math.round((reqCount / totalRequests) * 100) : 0}%`
+                    }}
+                  />
+                  <span
+                    className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 text-[10px] text-gray-200 font-semibold pointer-events-none"
+                    style={{ userSelect: "none" }}>
+                    {totalRequests > 0
+                      ? `${Math.round((reqCount / totalRequests) * 100)}%`
+                      : "0%"}
+                  </span>
+                </div>
               </div>
             ) : (
               <>
@@ -604,16 +660,29 @@ URL\tSize (bytes)
                   {foundUrls.map(({ url, size }) => (
                     <li
                       key={url}
-                      className="flex items-center justify-between px-1 py-0.5 rounded hover:bg-gray-400/10 transition-colors">
-                      <a
-                        href={window.location.origin + "/" + url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-gray-400 underline font-mono text-[11px] hover:text-yellow-200 transition-colors">
+                      className="flex items-center justify-between px-1 py-0.5 rounded hover:bg-gray-400/10 transition-colors cursor-pointer"
+                      onClick={() =>
+                        window.open(
+                          window.location.origin + "/" + url,
+                          "_blank"
+                        )
+                      }
+                      tabIndex={0}
+                      role="button"
+                      aria-label={`Open ${url}`}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          window.open(
+                            window.location.origin + "/" + url,
+                            "_blank"
+                          )
+                        }
+                      }}>
+                      <span className="text-gray-400 underline font-mono text-[11px] hover:text-yellow-200 transition-colors">
                         {url}
-                      </a>
+                      </span>
                       <span className="text-yellow-200 ml-2 text-[10px] font-mono">
-                        {size ? `${size} bytes` : "N/A"}
+                        {size ? formatBytes(size) : "N/A"}
                       </span>
                     </li>
                   ))}
@@ -624,7 +693,7 @@ URL\tSize (bytes)
             {/* Found Secrets Section */}
             {foundSecrets.length > 0 && (
               <>
-                <div className="text-xs font-semibold text-gray-400 my-2 text-red-400 flex justify-between items-center">
+                <div className="text-xs font-semibold my-2 text-red-400 flex justify-between items-center">
                   <span>
                     Potential Secrets ({filteredSecrets.length}/
                     {foundSecrets.length})
@@ -680,56 +749,38 @@ URL\tSize (bytes)
           </div>
 
           {/* Footer */}
-          <div className="px-4 pb-2 pt-2 flex justify-end">
-            <span
-              className="text-[10px] text-gray-400 font-semibold bg-gray-800 px-2 py-0.5 rounded cursor-pointer hover:bg-gray-700 pr-2 mr-2"
-              onClick={handleAboutClick}>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                className="inline-block mr-1"
-                viewBox="0 0 24 24">
-                <path
-                  fill="currentColor"
-                  d="M11 17h2v-6h-2zm1-8q.425 0 .713-.288T13 8t-.288-.712T12 7t-.712.288T11 8t.288.713T12 9m0 13q-2.075 0-3.9-.788t-3.175-2.137T2.788 15.9T2 12t.788-3.9t2.137-3.175T8.1 2.788T12 2t3.9.788t3.175 2.137T21.213 8.1T22 12t-.788 3.9t-2.137 3.175t-3.175 2.138T12 22"
-                />
-              </svg>
-              About FlashFuzz
-            </span>
-            <span
-              className="text-[10px] text-gray-400 font-semibold bg-gray-800 px-2 py-0.5 rounded cursor-pointer hover:bg-gray-700 pr-2 mr-2"
-              onClick={handleSaveResults}>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="inline-block mr-1"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24">
-                <path
-                  fill="currentColor"
-                  d="m12 16l-5-5l1.4-1.45l2.6 2.6V4h2v8.15l2.6-2.6L17 11zm-6 4q-.825 0-1.412-.587T4 18v-3h2v3h12v-3h2v3q0 .825-.587 1.413T18 20z"
-                />
-              </svg>
-              Save Results
-            </span>
-            <span
-              className="text-[10px] text-gray-400 font-semibold bg-gray-800 px-2 py-0.5 rounded cursor-pointer hover:bg-gray-700"
-              onClick={handleCopyToClipboard}>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                className="inline-block mr-1"
-                viewBox="0 0 24 24">
-                <path
-                  fill="currentColor"
-                  d="M20 3h-3.2c-.4-1.2-1.5-2-2.8-2s-2.4.8-2.8 2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2m-6 0c.6 0 1 .5 1 1s-.5 1-1 1s-1-.5-1-1s.4-1 1-1m2 11H9v-2h7m3-2H9V8h10M4 21h14v2H4c-1.1 0-2-.9-2-2V7h2"
-                />
-              </svg>
-              {copied ? "Copied!" : "Copy Results"}
-              {copied ? <span className="text-green-400 ml-1">✅</span> : null}
-            </span>
+          <div className="flex justify-end gap-2 px-4 py-2">
+            <button
+              onClick={handleAboutClick}
+              className="flex items-center gap-1 text-xs font-semibold text-gray-300 bg-gray-800 px-3 py-1 rounded hover:bg-gray-700 transition">
+              <Info className="w-3 h-3" />
+              About
+            </button>
+
+            <button
+              onClick={handleSaveResultsAsTXT}
+              className="flex items-center gap-1 text-xs font-semibold text-gray-300 bg-gray-800 px-3 py-1 rounded hover:bg-gray-700 transition">
+              <Download className="w-3 h-3" />
+              TXT
+            </button>
+
+            <button
+              onClick={handleSaveResultsAsJSON}
+              className="flex items-center gap-1 text-xs font-semibold text-gray-300 bg-gray-800 px-3 py-1 rounded hover:bg-gray-700 transition">
+              <Download className="w-3 h-3" />
+              JSON
+            </button>
+
+            <button
+              onClick={handleCopyToClipboard}
+              className="flex items-center gap-1 text-xs font-semibold text-gray-300 bg-gray-800 px-3 py-1 rounded hover:bg-gray-700 transition">
+              {copied ? (
+                <Check className="w-3 h-3 text-green-400" />
+              ) : (
+                <CopyIcon className="w-3 h-3" />
+              )}
+              {copied ? "Copied!" : "Copy"}
+            </button>
           </div>
         </>
       )}
@@ -740,7 +791,11 @@ URL\tSize (bytes)
 const Content = () => {
   const [enabled] = useStorage<boolean>("flashfuzz_enabled", false)
   const [wordlists] = useStorage<string>("flashfuzz_wordlists", "")
-  return <>{enabled ? <Main wordlists={wordlists} /> : null}</>
+  const [excludedSites] = useStorage<string>("flashfuzz_excluded_sites", "")
+
+  if (!enabled) return null
+  if (isExcludedSite(window.location.href, excludedSites)) return null
+  return <Main wordlists={wordlists} />
 }
 
 export default Content

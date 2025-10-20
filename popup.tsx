@@ -1,3 +1,13 @@
+import clsx from "clsx"
+import {
+  Check,
+  Info,
+  RefreshCcw,
+  Save,
+  Star,
+  ToggleLeft,
+  ToggleRight
+} from "lucide-react"
 import React, { useEffect, useState } from "react"
 
 import { Storage } from "@plasmohq/storage"
@@ -9,11 +19,16 @@ import "./style.css"
 
 const EXT_KEY = "flashfuzz_enabled"
 const WORDLISTS_KEY = "flashfuzz_wordlists"
+const EXCLUDED_SITES_KEY = "flashfuzz_excluded_sites"
 const BATCH_SIZE_KEY = "flashfuzz_batch_size"
 const INTERVAL_MS_KEY = "flashfuzz_interval_ms"
 const REPEATED_SIZES_KEY = "flashfuzz_repeated_sizes_threshold"
+
 const storage = new Storage()
 const wordlistsDefault = urlsToCheck.join("\n")
+const excludedSitesDefault = ["google.com", "github.com", "youtube.com"].join(
+  "\n"
+)
 const batchSizeDefault = 10
 const intervalMsDefault = 500
 const repeatedSizesThresholdDefault = 5
@@ -21,6 +36,7 @@ const repeatedSizesThresholdDefault = 5
 const Popup = () => {
   const [enabled, setEnabled] = useState(false)
   const [wordlists, setWordlists] = useState("")
+  const [excludedSites, setExcludedSites] = useState("")
   const [batchSize, setBatchSize] = useState(batchSizeDefault)
   const [intervalMs, setIntervalMs] = useState(intervalMsDefault)
   const [repeatedSizesThreshold, setRepeatedSizesThreshold] = useState(
@@ -41,6 +57,15 @@ const Popup = () => {
       else {
         setWordlists(wordlistsDefault)
         storage.set(WORDLISTS_KEY, wordlistsDefault)
+      }
+    })
+
+    // Get Excluded Sites from storage or set default if not present
+    storage.get(EXCLUDED_SITES_KEY).then((stored) => {
+      if (typeof stored === "string") setExcludedSites(stored)
+      else {
+        setExcludedSites(excludedSitesDefault)
+        storage.set(EXCLUDED_SITES_KEY, excludedSitesDefault)
       }
     })
 
@@ -82,11 +107,14 @@ const Popup = () => {
     storage.set(INTERVAL_MS_KEY, intervalMsDefault)
     setRepeatedSizesThreshold(repeatedSizesThresholdDefault)
     storage.set(REPEATED_SIZES_KEY, repeatedSizesThresholdDefault)
+    setExcludedSites(excludedSitesDefault)
+    storage.set(EXCLUDED_SITES_KEY, excludedSitesDefault)
   }
 
   // Save all settings to storage
   const handleSaveSettings = () => {
     storage.set(WORDLISTS_KEY, wordlists)
+    storage.set(EXCLUDED_SITES_KEY, excludedSites)
     storage.set(BATCH_SIZE_KEY, batchSize)
     storage.set(INTERVAL_MS_KEY, intervalMs)
     storage.set(REPEATED_SIZES_KEY, repeatedSizesThreshold)
@@ -95,245 +123,194 @@ const Popup = () => {
   }
 
   return (
-    <div className="min-w-[400px] max-w-sm bg-gray-950 text-gray-100 overflow-hidden border border-gray-800 shadow-xl">
+    <div className="min-w-[360px] max-w-sm bg-slate-950 text-slate-100 overflow-hidden text-sm border border-slate-800">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-4 bg-gradient-to-b from-gray-900 to-gray-950 shadow-inner">
-        {/* Left: Logo + Text */}
-        <div className="flex items-center">
-          {/* Logo */}
-          <div className="w-10 h-10 flex items-center justify-center">
-            <Logo />
+      <div className="px-4 py-3 bg-gradient-to-b from-slate-900 to-slate-950 border-b border-slate-800">
+        <div className="flex items-center justify-between">
+          {/* Left: Logo + Text */}
+          <div className="flex items-center gap-2">
+            <Logo className="w-8 h-8 text-slate-950" />
+            <div>
+              <h1 className="text-sm font-semibold text-white tracking-tight">
+                FlashFuzz
+              </h1>
+              <p className="text-[10px] text-slate-400">Version 1.1</p>
+            </div>
           </div>
 
-          {/* Text next to logo */}
-          <div className="ml-3 flex flex-col justify-center">
-            <h1 className="text-lg font-bold text-white tracking-wide">
-              FlashFuzz
-            </h1>
-            <p className="text-xs text-gray-400">
-              Quickly fuzz URLs in your tabs
-            </p>
-          </div>
-        </div>
-
-        {/* Right: Toggle */}
-        <div className="flex items-center">
-          <span
-            className={`text-sm font-medium ${
-              enabled ? "text-white" : "text-gray-500"
-            }`}>
-            {enabled ? "ON" : "OFF"}
-          </span>
-
+          {/* Toggle */}
           <button
             onClick={handleToggle}
-            className={`relative w-11 h-6 ml-2 rounded-full transition-all duration-300 border ${
-              enabled
-                ? "bg-yellow-500 border-white shadow-[0_0_10px_rgba(6,182,212,0.5)]"
-                : "bg-gray-700 border-gray-600"
-            }`}>
-            <span
-              className={`absolute top-[2px] left-[3px] w-[18px] h-[18px] rounded-full bg-white shadow-md transform transition-transform duration-300 ${
-                enabled ? "translate-x-5" : ""
-              }`}
-            />
+            role="switch" // <-- 1. Accessibility: It's a switch
+            aria-checked={enabled} // <-- 2. Accessibility: Announce its state
+            className={clsx(
+              "flex items-center gap-3 px-4 py-2 rounded-full font-bold text-sm",
+              "transition-colors duration-200",
+              "focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-2 focus:ring-offset-gray-900", // <-- Added offset for dark BGs
+              {
+                // 3. Visuals: "ON" state is now solid and high-contrast
+                "bg-yellow-400 text-yellow-900 hover:bg-yellow-300": enabled,
+                // "OFF" state
+                "bg-gray-800 text-gray-300 hover:bg-gray-700": !enabled
+              }
+            )}>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="1em"
+              height="1em"
+              viewBox="0 0 24 24"
+              fill="currentColor">
+              <path d="M12 12q-.425 0-.712-.288T11 11V3q0-.425.288-.712T12 2t.713.288T13 3v8q0 .425-.288.713T12 12m0 9q-1.875 0-3.512-.712t-2.85-1.925t-1.925-2.85T3 12q0-1.525.5-2.963T4.95 6.4q.275-.35.7-.337t.75.337q.275.275.25.675t-.275.75Q5.7 8.725 5.35 9.8T5 12q0 2.925 2.038 4.963T12 19t4.963-2.037T19 12q0-1.15-.337-2.238T17.6 7.775q-.25-.325-.275-.712t.25-.663q.3-.3.725-.312t.7.312q.975 1.2 1.488 2.625T21 12q0 1.875-.712 3.513t-1.925 2.85t-2.85 1.925T12 21" />
+            </svg>
+            <span>{enabled ? "ON" : "OFF"}</span>
           </button>
         </div>
       </div>
 
       {/* Body */}
-      <div className="px-3 pb-4 flex flex-col gap-2">
+      <div className="px-4 py-4 space-y-4">
         {/* Settings */}
-        <div className="flex flex-col gap-2">
-          <label className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
-            Settings
-          </label>
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center justify-between">
-              <span
-                className="text-xs text-gray-300"
-                title="Number of requests to send in each batch.">
-                Batch Size{" "}
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="inline-block w-3 h-3 ml-1 text-gray-500 hover:text-gray-300 cursor-pointer"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="10" />
-                  <line x1="12" y1="16" x2="12" y2="12" />
-                  <line x1="12" y1="8" x2="12.01" y2="8" />
-                </svg>
-              </span>
-              <input
-                type="number"
-                min={1}
-                value={batchSize}
-                onChange={(e) => {
-                  const val = Math.max(
-                    1,
-                    parseInt(e.target.value) || batchSizeDefault
-                  )
-                  setBatchSize(val)
-                  storage.set(BATCH_SIZE_KEY, val)
-                }}
-                className="w-16 px-2 py-1 text-xs bg-gray-900 border border-gray-700 rounded focus:outline-none focus:border-white"
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <span
-                className="text-xs text-gray-300"
-                title="The time to wait between each request.">
-                Interval (ms)
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="inline-block w-3 h-3 ml-1 text-gray-500 hover:text-gray-300 cursor-pointer"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="10" />
-                  <line x1="12" y1="16" x2="12" y2="12" />
-                  <line x1="12" y1="8" x2="12.01" y2="8" />
-                </svg>
-              </span>
-              <input
-                type="number"
-                min={1}
-                value={intervalMs}
-                onChange={(e) => {
-                  const val = Math.max(
-                    1,
-                    parseInt(e.target.value) || intervalMsDefault
-                  )
-                  setIntervalMs(val)
-                }}
-                className="w-16 px-2 py-1 text-xs bg-gray-900 border border-gray-700 rounded focus:outline-none focus:border-white"
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <span
-                className="text-xs text-gray-300"
-                title="Filters out duplicate responses when requests return the same data. For every response size that is repeated more than this threshold, only one will be kept.">
-                Duplicate Response Filter
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="inline-block w-3 h-3 ml-1 text-gray-500 hover:text-gray-300 cursor-pointer"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="10" />
-                  <line x1="12" y1="16" x2="12" y2="12" />
-                  <line x1="12" y1="8" x2="12.01" y2="8" />
-                </svg>
-              </span>
-              <input
-                type="number"
-                min={1}
-                value={repeatedSizesThreshold}
-                onChange={(e) => {
-                  const val = Math.max(
-                    1,
-                    parseInt(e.target.value) || repeatedSizesThresholdDefault
-                  )
-                  setRepeatedSizesThreshold(val)
-                }}
-                className="w-16 px-2 py-1 text-xs bg-gray-900 border border-gray-700 rounded focus:outline-none focus:border-white"
-              />
-            </div>
+        <div>
+          <div className="flex items-center gap-1.5 mb-2">
+            <label className="text-[10px] font-semibold text-slate-300 uppercase tracking-wider">
+              Settings
+            </label>
+          </div>
+          <div className="space-y-2 bg-slate-900/50 rounded-md p-3 border border-slate-800">
+            {[
+              {
+                label: "Batch Size",
+                val: batchSize,
+                set: setBatchSize,
+                def: batchSizeDefault,
+                tooltip: "Number of requests to send in each batch."
+              },
+              {
+                label: "Interval (ms)",
+                val: intervalMs,
+                set: setIntervalMs,
+                def: intervalMsDefault,
+                tooltip: "The time to wait between each request."
+              },
+              {
+                label: "Duplicate Filter",
+                val: repeatedSizesThreshold,
+                set: setRepeatedSizesThreshold,
+                def: repeatedSizesThresholdDefault,
+                tooltip:
+                  "Filters out duplicate responses when requests return the same data. For every response size that is repeated more than this threshold, only one will be kept."
+              }
+            ].map((item, i) => (
+              <div key={i} className="flex items-center justify-between gap-1">
+                <div className="flex items-center gap-1 flex-1 text-[10px] text-slate-300 font-medium">
+                  {item.label}
+                  <span title={item.tooltip}>
+                    <Info className="w-3 h-3 text-slate-500 hover:text-slate-400 cursor-help transition-colors" />
+                  </span>
+                </div>
+                <input
+                  type="number"
+                  min={1}
+                  value={item.val}
+                  onChange={(e) =>
+                    item.set(Math.max(1, parseInt(e.target.value) || item.def))
+                  }
+                  className="w-16 px-1.5 py-0.5 text-[10px] bg-slate-800 border border-slate-700 rounded-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500/50 transition"
+                />
+              </div>
+            ))}
           </div>
         </div>
 
         {/* Wordlists */}
-        <div className="flex flex-col gap-2">
-          <label
-            htmlFor="wordlists"
-            className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
+        <div>
+          <label className="text-[10px] font-semibold text-slate-300 uppercase tracking-wider mb-2 flex items-center gap-1.5">
             Wordlists
+            <span title="List of words used for fuzzing. Each entry should be on a new line.">
+              <Info className="w-3 h-3 text-slate-500 hover:text-slate-400 cursor-help transition-colors" />
+            </span>
           </label>
-
           <textarea
-            id="wordlists"
             value={wordlists}
-            rows={5}
+            rows={4}
             onChange={handleWordlistsChange}
-            className="w-full border border-gray-700 bg-gray-900 text-gray-100 px-3 py-2 text-xs resize-none focus:outline-none focus:border-white focus:ring-1 focus:ring-white/50"
-            placeholder="Enter wordlists here..."
+            placeholder="Enter wordlists (one per line)..."
+            className="w-full border border-slate-700 bg-slate-900 text-slate-100 px-2 py-2 text-[10px] rounded-md resize-none focus:outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500/50 transition placeholder-slate-500"
           />
-
-          <div className="text-[11px] text-gray-500">
-            {wordlists ? wordlists.split("\n").length : 0} entries
+          <div className="text-[10px] text-slate-400 mt-1 flex justify-between">
+            <span>
+              {wordlists
+                ? wordlists.split("\n").filter((l) => l.trim()).length
+                : 0}{" "}
+              entries
+            </span>
           </div>
 
-          <div className="flex gap-2 mt-1">
-            {/* Save */}
+          {/* Excluded Websites */}
+          <label className="text-[10px] font-semibold text-slate-300 uppercase tracking-wider mb-2 mt-3 flex items-center gap-1.5">
+            Excluded Websites
+            <span title="List of websites where FlashFuzz should be inactive. Each entry should be on a new line.">
+              <Info className="w-3 h-3 text-slate-500 hover:text-slate-400 cursor-help transition-colors" />
+            </span>
+          </label>
+          <textarea
+            value={excludedSites}
+            rows={3}
+            onChange={(e) => setExcludedSites(e.target.value)}
+            placeholder="Enter excluded websites (one per line)..."
+            className="w-full border border-slate-700 bg-slate-900 text-slate-100 px-2 py-1.5 text-[10px] rounded-md resize-none focus:outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500/50 transition placeholder-slate-500"
+          />
+          <div className="text-[10px] text-slate-400 mt-1 flex justify-between">
+            <span>
+              {excludedSites
+                ? excludedSites.split("\n").filter((l) => l.trim()).length
+                : 0}{" "}
+              entries
+            </span>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex gap-1.5 mt-2">
             <button
               onClick={handleSaveSettings}
-              className="flex items-center justify-center gap-1 px-2 py-1.5 bg-yellow-500/10 text-xs text-yellow-300 rounded-md hover:bg-yellow-500/20 transition">
-              <svg
-                className="w-4 h-4"
-                fill="currentColor"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-                data-name="Layer 1">
-                <path d="M20.71,9.29l-6-6a1,1,0,0,0-.32-.21A1.09,1.09,0,0,0,14,3H6A3,3,0,0,0,3,6V18a3,3,0,0,0,3,3H18a3,3,0,0,0,3-3V10A1,1,0,0,0,20.71,9.29ZM9,5h4V7H9Zm6,14H9V16a1,1,0,0,1,1-1h4a1,1,0,0,1,1,1Zm4-1a1,1,0,0,1-1,1H17V16a3,3,0,0,0-3-3H10a3,3,0,0,0-3,3v3H6a1,1,0,0,1-1-1V6A1,1,0,0,1,6,5H7V8A1,1,0,0,0,8,9h6a1,1,0,0,0,1-1V6.41l4,4Z" />
-              </svg>
-              Save Settings
+              className="flex-1 flex items-center justify-center gap-1 px-2 py-1 bg-yellow-500 hover:bg-yellow-600 text-slate-950 font-medium text-[10px] rounded-md transition-colors">
+              {showSaved ? (
+                <>
+                  <Check className="w-3 h-3" /> Saved!
+                </>
+              ) : (
+                <>
+                  <Save className="w-3 h-3" /> Save Settings
+                </>
+              )}
             </button>
-
-            {/* Reset */}
             <button
               onClick={handleReset}
-              className="flex items-center justify-center gap-1 px-2 py-1.5 bg-red-500/10 text-xs text-red-300 rounded-md hover:bg-red-500/20 transition">
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="w-4 h-4">
-                <polyline points="1 4 1 10 7 10" />
-                <path d="M3.51 15a9 9 0 1 0 .49-5h-2" />
-              </svg>
-              Reset
+              className="flex-1 flex items-center justify-center gap-1 px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium text-[10px] rounded-md border border-slate-700 transition-colors">
+              <RefreshCcw className="w-3 h-3" /> Reset
             </button>
-            {showSaved && (
-              <p className="text-green-500 text-xs mt-2">
-                Settings saved successfully!
-              </p>
-            )}
           </div>
         </div>
       </div>
+
       {/* Footer */}
-      <div className="px-4 py-2 border-t border-gray-800 bg-gray-900/90 flex justify-center items-center text-xs font-mono text-gray-400 space-x-3">
+      <div className="px-4 py-2 border-t border-slate-800 bg-slate-900/50 text-[10px] text-slate-400 flex justify-center gap-3">
         <a
           href="https://github.com/Ademking/FlashFuzz"
           target="_blank"
           rel="noopener noreferrer"
-          className="text-gray-300 hover:text-white font-mono transition-colors duration-200 hover:underline">
-          Give FlashFuzz a star! ⭐
+          className="flex items-center gap-1.5 hover:text-yellow-400 hover:underline transition">
+          <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" /> Star on
+          GitHub
         </a>
-        <span className="text-gray-500">|</span>
-        <span>
-          Created by{" "}
-          <a
-            href="https://github.com/Ademking"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-gray-300 hover:text-white font-mono transition-colors duration-200 underline">
-            Adem Kouki
-          </a>
-        </span>
+        <span className="text-slate-600">•</span>
+        <a
+          href="https://github.com/Ademking"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="hover:text-yellow-400 hover:underline transition">
+          Created by Adem Kouki
+        </a>
       </div>
     </div>
   )

@@ -14,8 +14,10 @@ const SECRET_PATTERNS: Record<string, RegExp> = {
   // Vue / React Router paths, e.g., path: '/home', component: Home
   router_path: /path\s*:\s*['"`](\/[a-zA-Z0-9-_\/:.?=&]*)['"`]/gi,
 
-  // Generic URL strings in JS
-  url_string: /['"`](https?:\/\/[a-zA-Z0-9\-._~:/?#[\]@!$&'()*+,;=]+)['"`]/g,
+  // Generic URL strings in JS (excluding SVG URLs)
+
+  url_string:
+    /['"`](https?:\/\/(?!www\.w3\.org)[a-zA-Z0-9\-._~:/?#[\]@!$&'()*+,;=]+)['"`]/g,
 
   // WebSocket endpoints
   ws_url: /['"`]wss?:\/\/[a-zA-Z0-9\-._~:/?#[\]@!$&'()*+,;=]+['"`]/g,

@@ -27,3 +27,15 @@
   scrollbar-width: thin;
   scrollbar-color: #475569 #0f172a;
 }
+
+/* Hide arrows in Chrome, Edge, Safari */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Hide arrows in Firefox */
+input[type="number"] {
+  -moz-appearance: textfield;
+}
