@@ -3,6 +3,7 @@ import { Check, CopyIcon, Download, Info } from "lucide-react"
 import type { PlasmoCSConfig } from "plasmo"
 import React, { useEffect, useRef, useState } from "react"
 
+import { Storage } from "@plasmohq/storage"
 import { useStorage } from "@plasmohq/storage/hook"
 
 import Logo from "~logo"
@@ -238,10 +239,19 @@ const Main = ({ wordlists }) => {
     return matchesSearch && matchesType
   })
 
-  // Read batchSize, intervalMs, repeatedSizesThreshold from storage
-  const [batchSize] = useStorage<number>(BATCH_SIZE_KEY, 10)
-  const [intervalMs] = useStorage<number>(INTERVAL_MS_KEY, 500)
-  const [repeatedSizesThreshold] = useStorage<number>(REPEATED_SIZES_KEY, 5)
+  // Read batchSize, intervalMs, repeatedSizesThreshold from storage (local area)
+  const [batchSize] = useStorage<number>(
+    { key: BATCH_SIZE_KEY, instance: new Storage({ area: "local" }) },
+    10
+  )
+  const [intervalMs] = useStorage<number>(
+    { key: INTERVAL_MS_KEY, instance: new Storage({ area: "local" }) },
+    500
+  )
+  const [repeatedSizesThreshold] = useStorage<number>(
+    { key: REPEATED_SIZES_KEY, instance: new Storage({ area: "local" }) },
+    5
+  )
 
   // Function to save results to a text file
   const handleSaveResultsAsTXT = () => {
@@ -789,9 +799,21 @@ URL\tSize (bytes)
 }
 
 const Content = () => {
-  const [enabled] = useStorage<boolean>("flashfuzz_enabled", false)
-  const [wordlists] = useStorage<string>("flashfuzz_wordlists", "")
-  const [excludedSites] = useStorage<string>("flashfuzz_excluded_sites", "")
+  const [enabled] = useStorage<boolean>(
+    { key: "flashfuzz_enabled", instance: new Storage({ area: "local" }) },
+    false
+  )
+  const [wordlists] = useStorage<string>(
+    { key: "flashfuzz_wordlists", instance: new Storage({ area: "local" }) },
+    ""
+  )
+  const [excludedSites] = useStorage<string>(
+    {
+      key: "flashfuzz_excluded_sites",
+      instance: new Storage({ area: "local" })
+    },
+    ""
+  )
 
   if (!enabled) return null
   if (isExcludedSite(window.location.href, excludedSites)) return null

@@ -24,7 +24,9 @@ const BATCH_SIZE_KEY = "flashfuzz_batch_size"
 const INTERVAL_MS_KEY = "flashfuzz_interval_ms"
 const REPEATED_SIZES_KEY = "flashfuzz_repeated_sizes_threshold"
 
-const storage = new Storage()
+const storage = new Storage({
+  area: "local"
+})
 const wordlistsDefault = urlsToCheck.join("\n")
 const excludedSitesDefault = ["google.com", "github.com", "youtube.com"].join(
   "\n"
