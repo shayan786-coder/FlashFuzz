@@ -12,6 +12,7 @@ import { SECRET_PATTERNS } from "~patterns"
 const BATCH_SIZE_KEY = "flashfuzz_batch_size"
 const INTERVAL_MS_KEY = "flashfuzz_interval_ms"
 const REPEATED_SIZES_KEY = "flashfuzz_repeated_sizes_threshold"
+const SCAN_PORTS_KEY = "flashfuzz_scan_ports"
 
 declare global {
   interface Window {
@@ -27,6 +28,7 @@ export const config: PlasmoCSConfig = {
 }
 
 type FoundUrl = { url: string; size: number }
+type FoundPort = { url: string; port: string; open: boolean }
 
 type MatchResult = {
   type: string
@@ -132,36 +134,93 @@ function isExcludedSite(url: string, excludedSites: string): boolean {
   )
 }
 
+// Port scanning function with short timeout
+async function scanPortsRoot(
+  ports: string[],
+  controller: { paused: boolean; stopped: boolean },
+  onProgress: (done: number, total: number) => void
+): Promise<FoundPort[]> {
+  const foundPorts: FoundPort[] = []
+  let requestsDone = 0
+  const total = ports.length
+  const TIMEOUT_MS = 700 // very short timeout
+
+  await Promise.all(
+    ports.map(async (port) => {
+      if (controller.stopped) return
+      let testUrl =
+        window.location.protocol +
+        "//" +
+        window.location.hostname +
+        ":" +
+        port +
+        "/"
+      const controllerAbort = new AbortController()
+      const timeout = setTimeout(() => controllerAbort.abort(), TIMEOUT_MS)
+      try {
+        const res = await fetch(testUrl, {
+          method: "HEAD",
+          signal: controllerAbort.signal
+        })
+        clearTimeout(timeout)
+        foundPorts.push({ url: "/", port, open: true }) // Any response means open
+      } catch (err) {
+        clearTimeout(timeout)
+        // If error is due to abort (timeout), treat as closed
+        if (err && err.name === "AbortError") {
+          foundPorts.push({ url: "/", port, open: false })
+        } else {
+          // Any other error (including CORS) means port is open
+          foundPorts.push({ url: "/", port, open: true })
+        }
+      } finally {
+        requestsDone++
+        onProgress(requestsDone, total)
+      }
+    })
+  )
+  return foundPorts
+}
+
 const checkUrlsIncremental = async (
   wordlists: string,
   controller: { paused: boolean; stopped: boolean },
   batchSize: number,
   intervalMs: number,
   repeatedSizesThreshold: number,
-  onResult: (urls: FoundUrl[]) => void,
+  scanPorts: string,
+  onResult: (urls: FoundUrl[], ports: FoundPort[]) => void,
   onDone: () => void,
   onProgress: (done: number, total: number) => void
 ) => {
   let foundUrls: FoundUrl[] = []
   const urls = wordlists.split("\n").filter(Boolean)
+  const ports = scanPorts
+    .split(",")
+    .map((p) => p.trim())
+    .filter(Boolean)
   let requestsDone = 0
-  const total = urls.length
+  const total = urls.length + (ports.length || 0)
 
-  for (let i = 0; i < total; i += batchSize) {
-    // Handle stop
+  // Scan open ports for the root only (not for every path)
+  const foundPorts = await scanPortsRoot(ports, controller, (done) =>
+    onProgress(done, total)
+  )
+
+  for (let i = 0; i < urls.length; i += batchSize) {
     if (controller.stopped) break
-
-    // Handle pause
     while (controller.paused && !controller.stopped) {
       await new Promise((resolve) => setTimeout(resolve, 300))
     }
-
     const batch = urls.slice(i, i + batchSize)
+
     await Promise.all(
       batch.map(async (url) => {
         if (controller.stopped) return
         try {
-          const response = await fetch(window.location.origin + "/" + url)
+          const response = await fetch(window.location.origin + "/" + url, {
+            credentials: "omit" // Bypass browser asking for credentials every time 401 is encountered
+          })
           if (response.status === 200 || response.status === 401) {
             let size = parseInt(response.headers.get("content-length") || "")
             if (!size || isNaN(size)) {
@@ -173,7 +232,7 @@ const checkUrlsIncremental = async (
         } catch {
         } finally {
           requestsDone++
-          onProgress(requestsDone, total)
+          onProgress(requestsDone + ports.length, total)
         }
       })
     )
@@ -188,13 +247,12 @@ const checkUrlsIncremental = async (
     const filtered = foundUrls.filter(
       ({ size }) => !repeatedSizes.includes(size)
     )
-    onResult(filtered)
+    onResult(filtered, foundPorts)
 
-    if (i + batchSize < total && !controller.stopped) {
+    if (i + batchSize < urls.length && !controller.stopped) {
       await new Promise((resolve) => setTimeout(resolve, intervalMs))
     }
   }
-
   onDone()
 }
 
@@ -206,10 +264,10 @@ export const getStyle = () => {
 
 const Main = ({ wordlists }) => {
   const [foundUrls, setFoundUrls] = useState<FoundUrl[]>([])
+  const [foundPorts, setFoundPorts] = useState<FoundPort[]>([])
   const [loading, setLoading] = useState(true)
   const shouldRunRef = useRef(true)
   const [reqCount, setReqCount] = useState(0)
-  const totalRequests = wordlists.split("\n").length
   const [visible, setVisible] = useState(true)
   const [minimized, setMinimized] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -239,7 +297,7 @@ const Main = ({ wordlists }) => {
     return matchesSearch && matchesType
   })
 
-  // Read batchSize, intervalMs, repeatedSizesThreshold from storage (local area)
+  // Read batchSize, intervalMs, repeatedSizesThreshold, scanPorts from storage (local area)
   const [batchSize] = useStorage<number>(
     { key: BATCH_SIZE_KEY, instance: new Storage({ area: "local" }) },
     10
@@ -252,19 +310,27 @@ const Main = ({ wordlists }) => {
     { key: REPEATED_SIZES_KEY, instance: new Storage({ area: "local" }) },
     5
   )
+  const [scanPorts] = useStorage<string>(
+    { key: SCAN_PORTS_KEY, instance: new Storage({ area: "local" }) },
+    "80,443"
+  )
+
+  // Calculate total requests for progress bar
+  const totalRequests =
+    wordlists.split("\n").filter(Boolean).length +
+    scanPorts.split(",").filter(Boolean).length
 
   // Function to save results to a text file
   const handleSaveResultsAsTXT = () => {
-    if (foundUrls.length === 0 && foundSecrets.length === 0) return
+    if (
+      foundUrls.length === 0 &&
+      foundSecrets.length === 0 &&
+      foundPorts.length === 0
+    )
+      return
 
     const now = new Date()
-    const header = `FlashFuzz Scan Results
-Page scanned: ${window.location.href}
-Date scanned: ${now.toLocaleString()}
-
-URLs:
-URL\tSize (bytes)
---------------------------------`
+    const header = `FlashFuzz Scan Results\nPage scanned: ${window.location.href}\nDate scanned: ${now.toLocaleString()}\n\nURLs:\nURL\tSize (bytes)\n--------------------------------`
 
     const urlsBody = foundUrls
       .map(
@@ -275,16 +341,21 @@ URL\tSize (bytes)
       )
       .join("\n")
 
-    const secretsHeader = `
-Secrets:
-Type\tMatch
---------------------------------`
+    const portsHeader = `\nPorts:\nURL\tPort\tOpen\n--------------------------------`
+    const portsBody = foundPorts
+      .map(
+        ({ url, port, open }) =>
+          `${window.location.origin}/${url}\t${port}\t${open ? "open" : "closed"}`
+      )
+      .join("\n")
+
+    const secretsHeader = `\nSecrets:\nType\tMatch\n--------------------------------`
 
     const secretsBody = foundSecrets
       .map(({ type, match }) => `${type}\t${match}`)
       .join("\n")
 
-    const textContent = `${header}\n${urlsBody}\n${secretsHeader}\n${secretsBody}`
+    const textContent = `${header}\n${urlsBody}\n${portsHeader}\n${portsBody}\n${secretsHeader}\n${secretsBody}`
 
     const blob = new Blob([textContent], { type: "text/plain" })
     const url = URL.createObjectURL(blob)
@@ -296,7 +367,12 @@ Type\tMatch
   }
 
   const handleSaveResultsAsJSON = () => {
-    if (foundUrls.length === 0 && foundSecrets.length === 0) return
+    if (
+      foundUrls.length === 0 &&
+      foundSecrets.length === 0 &&
+      foundPorts.length === 0
+    )
+      return
     const now = new Date()
     const results = {
       pageScanned: window.location.href,
@@ -304,6 +380,11 @@ Type\tMatch
       urls: foundUrls.map(({ url, size }) => ({
         url: `${window.location.origin}/${url}`,
         size: size ? formatBytes(size) : "unknown"
+      })),
+      ports: foundPorts.map(({ url, port, open }) => ({
+        url: `${window.location.origin}/${url}`,
+        port,
+        open
       })),
       secrets: foundSecrets
     }
@@ -318,14 +399,14 @@ Type\tMatch
   }
 
   const handleCopyToClipboard = () => {
-    if (foundUrls.length === 0 && foundSecrets.length === 0) return
+    if (
+      foundUrls.length === 0 &&
+      foundSecrets.length === 0 &&
+      foundPorts.length === 0
+    )
+      return
 
-    const header = `FlashFuzz Scan Results
-Page scanned: ${window.location.href}
-Date scanned: ${new Date().toLocaleString()}
-URLs:
-URL\tSize (bytes)
---------------------------------`
+    const header = `FlashFuzz Scan Results\nPage scanned: ${window.location.href}\nDate scanned: ${new Date().toLocaleString()}\nURLs:\nURL\tSize (bytes)\n--------------------------------`
     const urlsBody = foundUrls
       .map(
         ({ url, size }) =>
@@ -334,17 +415,24 @@ URL\tSize (bytes)
           }`
       )
       .join("\n")
+    const portsHeader = `\nPorts:\nURL\tPort\tOpen\n--------------------------------`
+    const portsBody = foundPorts
+      .map(
+        ({ url, port, open }) =>
+          `${window.location.origin}/${url}\t${port}\t${open ? "open" : "closed"}`
+      )
+      .join("\n")
     const secretsHeader = `\nSecrets:\nType\tMatch\n--------------------------------`
     const secretsBody = foundSecrets
       .map(({ type, match }) => `${type}\t${match}`)
       .join("\n")
-    const textContent = `${header}\n${urlsBody}\n${secretsHeader}\n${secretsBody}`
+    const textContent = `${header}\n${urlsBody}\n${portsHeader}\n${portsBody}\n${secretsHeader}\n${secretsBody}`
 
     navigator.clipboard
       .writeText(textContent)
       .then(() => {
         setCopied(true)
-        setTimeout(() => setCopied(false), 2000) // show check for 2 seconds
+        setTimeout(() => setCopied(false), 2000)
       })
       .catch((err) =>
         console.error("Failed to copy results to clipboard:", err)
@@ -357,30 +445,34 @@ URL\tSize (bytes)
   }
 
   // Main effect to run the scans
+
   useEffect(() => {
     const controller = { paused: false, stopped: false }
-    const urls = wordlists.split("\n").filter(Boolean)
-
     setFoundUrls([])
-    setFoundSecrets([]) // reset secrets on each run
+    setFoundPorts([])
+    setFoundSecrets([])
     setLoading(true)
     setReqCount(0)
 
-    // URL scanning (existing)
-    const runUrlScan = async () => {
+    // URL and Port scanning
+    const runUrlPortScan = async () => {
       await checkUrlsIncremental(
         wordlists,
         controller,
         batchSize,
         intervalMs,
         repeatedSizesThreshold,
-        (urls) => setFoundUrls(urls),
-        () => {}, // keep previous behavior
+        scanPorts,
+        (urls, ports) => {
+          setFoundUrls(urls)
+          setFoundPorts(ports)
+        },
+        () => {},
         (done) => setReqCount(done)
       )
     }
 
-    // Secret scanning (new): fetch all page JS and run patterns
+    // Secret scanning (unchanged)
     const runSecretScan = async () => {
       try {
         const inlineScripts = [
@@ -411,28 +503,24 @@ URL\tSize (bytes)
           if (!script.content) continue
           const secrets = findSecretsWithContext(script.content)
           allSecrets = allSecrets.concat(secrets)
-          // Optional: update state incrementally to avoid memory spike
           setFoundSecrets([...allSecrets])
-          await new Promise((r) => setTimeout(r, 10)) // yield to browser
+          await new Promise((r) => setTimeout(r, 10))
         }
       } catch (err) {
         console.error(err)
       }
     }
 
-    // Start both scans (secret scan runs in parallel with URL scan)
-    runUrlScan()
+    runUrlPortScan()
     runSecretScan()
-
-    // Store controller so buttons can access it
     window.flashfuzzController = controller
-
     return () => {
       controller.stopped = true
     }
-  }, [wordlists, batchSize, intervalMs, repeatedSizesThreshold])
+  }, [wordlists, batchSize, intervalMs, repeatedSizesThreshold, scanPorts])
 
   // Only set loading to false when scan is truly finished
+
   useEffect(() => {
     const ctrl = window.flashfuzzController
     if (reqCount >= totalRequests || (ctrl && ctrl.stopped)) {
@@ -486,12 +574,18 @@ URL\tSize (bytes)
         }`}
         style={{ userSelect: "none" }}
         onMouseDown={(e) => {
+          const target = e.target as HTMLElement
+          // Only start drag if clicked directly on header (not links/buttons inside)
+          if (target.closest("a, button, input, select, textarea")) return
+          if (e.button !== 0) return // only left click
           dragging.current = true
           const rect = dragRef.current?.getBoundingClientRect()
           offset.current = {
             x: e.clientX - (rect?.left ?? 0),
             y: e.clientY - (rect?.top ?? 0)
           }
+          e.stopPropagation()
+          e.preventDefault()
         }}>
         <span
           className={`flex items-center justify-center rounded ${minimized ? "w-4 h-4" : "w-7 h-7"}`}>
@@ -657,7 +751,8 @@ URL\tSize (bytes)
                     <span>Found URLs</span>
                   )}{" "}
                   <span className="text-gray-200">
-                    ({foundUrls.length}/{totalRequests})
+                    ({foundUrls.length}/
+                    {wordlists.split("\n").filter(Boolean).length})
                   </span>
                   :
                 </div>
@@ -699,6 +794,36 @@ URL\tSize (bytes)
                 </ul>
               </div>
             )}
+
+            <div className="pointer-events-auto select-text py-2">
+              <div className="flex items-center flex-wrap gap-2">
+                <span className="text-xs font-semibold text-gray-400">
+                  Open Web Ports:
+                </span>
+
+                {foundPorts.filter((p) => p.open).length > 0 ? (
+                  foundPorts
+                    .filter((p) => p.open)
+                    .map((p, i) => {
+                      const portUrl = `${window.location.protocol}//${window.location.hostname}:${p.port}/`
+                      return (
+                        <a
+                          key={i}
+                          href={portUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center justify-center bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 font-mono text-[12px] px-3 py-1.5 rounded-full transition-colors min-w-[40px]">
+                          {p.port}
+                        </a>
+                      )
+                    })
+                ) : (
+                  <span className="text-[11px] text-gray-500 italic">
+                    No open ports detected
+                  </span>
+                )}
+              </div>
+            </div>
 
             {/* Found Secrets Section */}
             {foundSecrets.length > 0 && (

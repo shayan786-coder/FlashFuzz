@@ -20,6 +20,7 @@ import "./style.css"
 const EXT_KEY = "flashfuzz_enabled"
 const WORDLISTS_KEY = "flashfuzz_wordlists"
 const EXCLUDED_SITES_KEY = "flashfuzz_excluded_sites"
+const SCAN_PORTS_KEY = "flashfuzz_scan_ports"
 const BATCH_SIZE_KEY = "flashfuzz_batch_size"
 const INTERVAL_MS_KEY = "flashfuzz_interval_ms"
 const REPEATED_SIZES_KEY = "flashfuzz_repeated_sizes_threshold"
@@ -31,6 +32,7 @@ const wordlistsDefault = urlsToCheck.join("\n")
 const excludedSitesDefault = ["google.com", "github.com", "youtube.com"].join(
   "\n"
 )
+const scanPortsDefault = ["80", "443"].join(",")
 const batchSizeDefault = 10
 const intervalMsDefault = 500
 const repeatedSizesThresholdDefault = 5
@@ -39,6 +41,7 @@ const Popup = () => {
   const [enabled, setEnabled] = useState(false)
   const [wordlists, setWordlists] = useState("")
   const [excludedSites, setExcludedSites] = useState("")
+  const [scanPorts, setScanPorts] = useState("")
   const [batchSize, setBatchSize] = useState(batchSizeDefault)
   const [intervalMs, setIntervalMs] = useState(intervalMsDefault)
   const [repeatedSizesThreshold, setRepeatedSizesThreshold] = useState(
@@ -68,6 +71,14 @@ const Popup = () => {
       else {
         setExcludedSites(excludedSitesDefault)
         storage.set(EXCLUDED_SITES_KEY, excludedSitesDefault)
+      }
+    })
+    // Get Scan Ports from storage or set default if not present
+    storage.get(SCAN_PORTS_KEY).then((stored) => {
+      if (typeof stored === "string") setScanPorts(stored)
+      else {
+        setScanPorts(scanPortsDefault)
+        storage.set(SCAN_PORTS_KEY, scanPortsDefault)
       }
     })
 
@@ -111,6 +122,8 @@ const Popup = () => {
     storage.set(REPEATED_SIZES_KEY, repeatedSizesThresholdDefault)
     setExcludedSites(excludedSitesDefault)
     storage.set(EXCLUDED_SITES_KEY, excludedSitesDefault)
+    setScanPorts(scanPortsDefault)
+    storage.set(SCAN_PORTS_KEY, scanPortsDefault)
   }
 
   // Save all settings to storage
@@ -120,6 +133,7 @@ const Popup = () => {
     storage.set(BATCH_SIZE_KEY, batchSize)
     storage.set(INTERVAL_MS_KEY, intervalMs)
     storage.set(REPEATED_SIZES_KEY, repeatedSizesThreshold)
+    storage.set(SCAN_PORTS_KEY, scanPorts)
     setShowSaved(true)
     setTimeout(() => setShowSaved(false), 2000)
   }
@@ -173,11 +187,11 @@ const Popup = () => {
       <div className="px-4 py-4 space-y-4">
         {/* Settings */}
         <div>
-          <div className="flex items-center gap-1.5 mb-2">
+          {/* <div className="flex items-center gap-1.5 mb-2">
             <label className="text-[10px] font-semibold text-slate-300 uppercase tracking-wider">
               Settings
             </label>
-          </div>
+          </div> */}
           <div className="space-y-2 bg-slate-900/50 rounded-md p-3 border border-slate-800">
             {[
               {
@@ -234,7 +248,7 @@ const Popup = () => {
           </label>
           <textarea
             value={wordlists}
-            rows={4}
+            rows={3}
             onChange={handleWordlistsChange}
             placeholder="Enter wordlists (one per line)..."
             className="w-full border border-slate-700 bg-slate-900 text-slate-100 px-2 py-2 text-[10px] rounded-md resize-none focus:outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500/50 transition placeholder-slate-500"
@@ -244,7 +258,29 @@ const Popup = () => {
               {wordlists
                 ? wordlists.split("\n").filter((l) => l.trim()).length
                 : 0}{" "}
-              entries
+              words
+            </span>
+          </div>
+
+          {/* Ports */}
+          <label className="text-[10px] font-semibold text-slate-300 uppercase tracking-wider mb-2 mt-3 flex items-center gap-1.5">
+            Scan Ports
+            <span title="List of ports to scan, separated by commas.">
+              <Info className="w-3 h-3 text-slate-500 hover:text-slate-400 cursor-help transition-colors" />
+            </span>
+          </label>
+          <input
+            value={scanPorts}
+            onChange={(e) => setScanPorts(e.target.value)}
+            placeholder="Enter scan ports (comma-separated)..."
+            className="w-full border border-slate-700 bg-slate-900 text-slate-100 px-2 py-1.5 text-[10px] rounded-md resize-none focus:outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500/50 transition placeholder-slate-500"
+          />
+          <div className="text-[10px] text-slate-400 mt-1 flex justify-between">
+            <span>
+              {scanPorts
+                ? scanPorts.split(",").filter((l) => l.trim()).length
+                : 0}{" "}
+              ports
             </span>
           </div>
 
@@ -267,7 +303,7 @@ const Popup = () => {
               {excludedSites
                 ? excludedSites.split("\n").filter((l) => l.trim()).length
                 : 0}{" "}
-              entries
+              excluded sites
             </span>
           </div>
 
