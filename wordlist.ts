@@ -21,6 +21,7 @@ const urlsToCheck = [
   "web.config",
   "app.config",
   "_profiler",
+  "app_dev.php/_profiler/",
   "adminer",
   "adminer.php",
   "test",

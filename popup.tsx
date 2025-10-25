@@ -1,17 +1,19 @@
+"use client"
+
 import clsx from "clsx"
-import {
-  Check,
-  Info,
-  RefreshCcw,
-  Save,
-  Star,
-  ToggleLeft,
-  ToggleRight
-} from "lucide-react"
-import React, { useEffect, useState } from "react"
+import { Check, Info, RefreshCcw, Save, Zap } from "lucide-react"
+import type React from "react"
+import { useEffect, useState } from "react"
 
 import { Storage } from "@plasmohq/storage"
 
+import {
+  batchSizeDefault,
+  defaultPorts,
+  excludedSitesDefault,
+  intervalMsDefault,
+  repeatedSizesThresholdDefault
+} from "~constants"
 import Logo from "~logo"
 import urlsToCheck from "~wordlist"
 
@@ -29,13 +31,7 @@ const storage = new Storage({
   area: "local"
 })
 const wordlistsDefault = urlsToCheck.join("\n")
-const excludedSitesDefault = ["google.com", "github.com", "youtube.com"].join(
-  "\n"
-)
-const scanPortsDefault = ["80", "443"].join(",")
-const batchSizeDefault = 10
-const intervalMsDefault = 500
-const repeatedSizesThresholdDefault = 5
+const scanPortsDefault = defaultPorts.join(",")
 
 const Popup = () => {
   const [enabled, setEnabled] = useState(false)
@@ -84,15 +80,15 @@ const Popup = () => {
 
     // Get other settings from storage or set defaults if not present
     storage.get(BATCH_SIZE_KEY).then((stored) => {
-      const val = parseInt(stored)
+      const val = Number.parseInt(stored)
       setBatchSize(Number.isNaN(val) ? batchSizeDefault : val)
     })
     storage.get(INTERVAL_MS_KEY).then((stored) => {
-      const val = parseInt(stored)
+      const val = Number.parseInt(stored)
       setIntervalMs(Number.isNaN(val) ? intervalMsDefault : val)
     })
     storage.get(REPEATED_SIZES_KEY).then((stored) => {
-      const val = parseInt(stored)
+      const val = Number.parseInt(stored)
       setRepeatedSizesThreshold(
         Number.isNaN(val) ? repeatedSizesThresholdDefault : val
       )
@@ -139,60 +135,47 @@ const Popup = () => {
   }
 
   return (
-    <div className="min-w-[360px] max-w-sm bg-slate-950 text-slate-100 overflow-hidden text-sm border border-slate-800">
-      {/* Header */}
-      <div className="px-4 py-3 bg-gradient-to-b from-slate-900 to-slate-950 border-b border-slate-800">
-        <div className="flex items-center justify-between">
+    <div className="min-w-[340px] max-w-sm bg-gradient-to-b from-slate-900 via-slate-950 to-black text-slate-100 overflow-hidden text-xs border border-slate-800/50">
+      <div className="px-4 py-3 border-b border-slate-800/50 bg-gradient-to-r from-slate-900/80 to-slate-950/80 backdrop-blur-sm">
+        <div className="flex items-center justify-between gap-3">
           {/* Left: Logo + Text */}
-          <div className="flex items-center gap-2">
-            <Logo className="w-8 h-8 text-slate-950" />
-            <div>
-              <h1 className="text-sm font-semibold text-white tracking-tight">
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <div className="flex-shrink-0 p-1.5 bg-gradient-to-br from-yellow-500/20 to-amber-500/20 rounded-lg border border-yellow-500/30">
+              <Logo className="w-5 h-5 text-yellow-400" />
+            </div>
+            <div className="min-w-0">
+              <h1 className="text-sm font-bold text-white tracking-tight">
                 FlashFuzz
               </h1>
-              <p className="text-[10px] text-slate-400">Version 1.1</p>
+              <p className="text-xs text-slate-400">v1.2</p>
             </div>
           </div>
 
-          {/* Toggle */}
           <button
             onClick={handleToggle}
-            role="switch" // <-- 1. Accessibility: It's a switch
-            aria-checked={enabled} // <-- 2. Accessibility: Announce its state
+            role="switch"
+            aria-checked={enabled}
             className={clsx(
-              "flex items-center gap-3 px-4 py-2 rounded-full font-bold text-sm",
-              "transition-colors duration-200",
-              "focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-2 focus:ring-offset-gray-900", // <-- Added offset for dark BGs
+              "flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-semibold text-xs",
+              "transition-all duration-300 flex-shrink-0",
+              "focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-950",
               {
-                // 3. Visuals: "ON" state is now solid and high-contrast
-                "bg-yellow-400 text-yellow-900 hover:bg-yellow-300": enabled,
-                // "OFF" state
-                "bg-gray-800 text-gray-300 hover:bg-gray-700": !enabled
+                "bg-gradient-to-r from-yellow-500 to-amber-500 text-slate-900 focus:ring-yellow-400 shadow-lg shadow-yellow-500/20":
+                  enabled,
+                "bg-slate-800 text-slate-400 hover:bg-slate-700 focus:ring-slate-600":
+                  !enabled
               }
             )}>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="1em"
-              height="1em"
-              viewBox="0 0 24 24"
-              fill="currentColor">
-              <path d="M12 12q-.425 0-.712-.288T11 11V3q0-.425.288-.712T12 2t.713.288T13 3v8q0 .425-.288.713T12 12m0 9q-1.875 0-3.512-.712t-2.85-1.925t-1.925-2.85T3 12q0-1.525.5-2.963T4.95 6.4q.275-.35.7-.337t.75.337q.275.275.25.675t-.275.75Q5.7 8.725 5.35 9.8T5 12q0 2.925 2.038 4.963T12 19t4.963-2.037T19 12q0-1.15-.337-2.238T17.6 7.775q-.25-.325-.275-.712t.25-.663q.3-.3.725-.312t.7.312q.975 1.2 1.488 2.625T21 12q0 1.875-.712 3.513t-1.925 2.85t-2.85 1.925T12 21" />
-            </svg>
+            <Zap className={clsx("w-3 h-3", enabled ? "fill-current" : "")} />
             <span>{enabled ? "ON" : "OFF"}</span>
           </button>
         </div>
       </div>
 
       {/* Body */}
-      <div className="px-4 py-4 space-y-4">
-        {/* Settings */}
-        <div>
-          {/* <div className="flex items-center gap-1.5 mb-2">
-            <label className="text-[10px] font-semibold text-slate-300 uppercase tracking-wider">
-              Settings
-            </label>
-          </div> */}
-          <div className="space-y-2 bg-slate-900/50 rounded-md p-3 border border-slate-800">
+      <div className="px-4 py-3 space-y-3 overflow-y-auto">
+        <div className="space-y-2">
+          <div className="space-y-1.5 bg-slate-800/40 rounded-lg p-2.5 border border-slate-700/50 backdrop-blur-sm">
             {[
               {
                 label: "Batch Size",
@@ -217,10 +200,12 @@ const Popup = () => {
                   "Filters out duplicate responses when requests return the same data. For every response size that is repeated more than this threshold, only one will be kept."
               }
             ].map((item, i) => (
-              <div key={i} className="flex items-center justify-between gap-1">
-                <div className="flex items-center gap-1 flex-1 text-[10px] text-slate-300 font-medium">
+              <div
+                key={i}
+                className="flex items-center justify-between gap-2 py-0.5">
+                <div className="flex items-center gap-1 flex-1 text-xs text-slate-300 font-medium">
                   {item.label}
-                  <span title={item.tooltip}>
+                  <span title={item.tooltip} className="flex-shrink-0">
                     <Info className="w-3 h-3 text-slate-500 hover:text-slate-400 cursor-help transition-colors" />
                   </span>
                 </div>
@@ -229,117 +214,122 @@ const Popup = () => {
                   min={1}
                   value={item.val}
                   onChange={(e) =>
-                    item.set(Math.max(1, parseInt(e.target.value) || item.def))
+                    item.set(
+                      Math.max(1, Number.parseInt(e.target.value) || item.def)
+                    )
                   }
-                  className="w-16 px-1.5 py-0.5 text-[10px] bg-slate-800 border border-slate-700 rounded-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500/50 transition"
+                  className="w-16 px-1.5 py-0.5 text-xs bg-slate-900/60 border border-slate-700 rounded-md text-slate-100 placeholder-slate-500 focus:outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500/50 transition"
                 />
               </div>
             ))}
           </div>
         </div>
 
-        {/* Wordlists */}
-        <div>
-          <label className="text-[10px] font-semibold text-slate-300 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-            Wordlists
-            <span title="List of words used for fuzzing. Each entry should be on a new line.">
-              <Info className="w-3 h-3 text-slate-500 hover:text-slate-400 cursor-help transition-colors" />
-            </span>
-          </label>
-          <textarea
-            value={wordlists}
-            rows={3}
-            onChange={handleWordlistsChange}
-            placeholder="Enter wordlists (one per line)..."
-            className="w-full border border-slate-700 bg-slate-900 text-slate-100 px-2 py-2 text-[10px] rounded-md resize-none focus:outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500/50 transition placeholder-slate-500"
-          />
-          <div className="text-[10px] text-slate-400 mt-1 flex justify-between">
-            <span>
+        <div className="space-y-2">
+          {/* Wordlists */}
+          <div className="space-y-1">
+            <label className="text-xs font-semibold text-slate-300 flex items-center gap-1 px-0.5">
+              Wordlists
+              <span title="List of words used for fuzzing. Each entry should be on a new line.">
+                <Info className="w-3 h-3 text-slate-500 hover:text-slate-400 cursor-help transition-colors" />
+              </span>
+            </label>
+            <textarea
+              value={wordlists}
+              rows={2}
+              onChange={handleWordlistsChange}
+              placeholder="Enter wordlists (one per line)..."
+              className="w-full border border-slate-700 bg-slate-900/60 text-slate-100 px-2 py-1.5 text-xs rounded-lg resize-none focus:outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500/50 transition placeholder-slate-500"
+            />
+            <div className="text-xs text-slate-600 px-0.5 text-right">
               {wordlists
                 ? wordlists.split("\n").filter((l) => l.trim()).length
                 : 0}{" "}
               words
-            </span>
+            </div>
           </div>
 
           {/* Ports */}
-          <label className="text-[10px] font-semibold text-slate-300 uppercase tracking-wider mb-2 mt-3 flex items-center gap-1.5">
-            Scan Ports
-            <span title="List of ports to scan, separated by commas.">
-              <Info className="w-3 h-3 text-slate-500 hover:text-slate-400 cursor-help transition-colors" />
-            </span>
-          </label>
-          <input
-            value={scanPorts}
-            onChange={(e) => setScanPorts(e.target.value)}
-            placeholder="Enter scan ports (comma-separated)..."
-            className="w-full border border-slate-700 bg-slate-900 text-slate-100 px-2 py-1.5 text-[10px] rounded-md resize-none focus:outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500/50 transition placeholder-slate-500"
-          />
-          <div className="text-[10px] text-slate-400 mt-1 flex justify-between">
-            <span>
+          <div className="space-y-1">
+            <label className="text-xs font-semibold text-slate-300 flex items-center gap-1 px-0.5">
+              Scan Ports
+              <span title="List of ports to scan, separated by commas.">
+                <Info className="w-3 h-3 text-slate-500 hover:text-slate-400 cursor-help transition-colors" />
+              </span>
+            </label>
+            <input
+              value={scanPorts}
+              onChange={(e) => setScanPorts(e.target.value)}
+              placeholder="Enter scan ports (comma-separated)..."
+              className="w-full border border-slate-700 bg-slate-900/60 text-slate-100 px-2 py-1.5 text-xs rounded-lg resize-none focus:outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500/50 transition placeholder-slate-500"
+            />
+            <div className="text-xs text-slate-600 px-0.5 text-right">
               {scanPorts
                 ? scanPorts.split(",").filter((l) => l.trim()).length
                 : 0}{" "}
               ports
-            </span>
+            </div>
           </div>
 
           {/* Excluded Websites */}
-          <label className="text-[10px] font-semibold text-slate-300 uppercase tracking-wider mb-2 mt-3 flex items-center gap-1.5">
-            Excluded Websites
-            <span title="List of websites where FlashFuzz should be inactive. Each entry should be on a new line.">
-              <Info className="w-3 h-3 text-slate-500 hover:text-slate-400 cursor-help transition-colors" />
-            </span>
-          </label>
-          <textarea
-            value={excludedSites}
-            rows={3}
-            onChange={(e) => setExcludedSites(e.target.value)}
-            placeholder="Enter excluded websites (one per line)..."
-            className="w-full border border-slate-700 bg-slate-900 text-slate-100 px-2 py-1.5 text-[10px] rounded-md resize-none focus:outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500/50 transition placeholder-slate-500"
-          />
-          <div className="text-[10px] text-slate-400 mt-1 flex justify-between">
-            <span>
+          <div className="space-y-1">
+            <label className="text-xs font-semibold text-slate-300 flex items-center gap-1 px-0.5">
+              Excluded Websites
+              <span title="List of websites where FlashFuzz should be inactive. Each entry should be on a new line.">
+                <Info className="w-3 h-3 text-slate-500 hover:text-slate-400 cursor-help transition-colors" />
+              </span>
+            </label>
+            <textarea
+              value={excludedSites}
+              rows={2}
+              onChange={(e) => setExcludedSites(e.target.value)}
+              placeholder="Enter excluded websites (one per line)..."
+              className="w-full border border-slate-700 bg-slate-900/60 text-slate-100 px-2 py-1.5 text-xs rounded-lg resize-none focus:outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500/50 transition placeholder-slate-500"
+            />
+            <div className="text-xs text-slate-600 px-0.5 text-right">
               {excludedSites
                 ? excludedSites.split("\n").filter((l) => l.trim()).length
                 : 0}{" "}
               excluded sites
-            </span>
+            </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex gap-1.5 mt-2">
+          <div className="flex gap-2 mt-3 pt-1.5">
             <button
               onClick={handleSaveSettings}
-              className="flex-1 flex items-center justify-center gap-1 px-2 py-1 bg-yellow-500 hover:bg-yellow-600 text-slate-950 font-medium text-[10px] rounded-md transition-colors">
+              className={clsx(
+                "flex-1 flex items-center justify-center gap-1.5 px-2.5 py-1.5 font-semibold text-xs rounded-lg transition-all duration-300",
+                "focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-950",
+                showSaved
+                  ? "bg-gradient-to-r from-emerald-500 to-green-500 text-white focus:ring-emerald-400 shadow-lg shadow-emerald-500/20"
+                  : "bg-gradient-to-r from-yellow-500 to-amber-500 text-slate-900 hover:shadow-lg hover:shadow-yellow-500/20 focus:ring-yellow-400 font-bold"
+              )}>
               {showSaved ? (
                 <>
-                  <Check className="w-3 h-3" /> Saved!
+                  <Check className="w-3.5 h-3.5" /> Saved!
                 </>
               ) : (
                 <>
-                  <Save className="w-3 h-3" /> Save Settings
+                  <Save className="w-3.5 h-3.5" /> Save
                 </>
               )}
             </button>
             <button
               onClick={handleReset}
-              className="flex-1 flex items-center justify-center gap-1 px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium text-[10px] rounded-md border border-slate-700 transition-colors">
-              <RefreshCcw className="w-3 h-3" /> Reset
+              className="flex-1 flex items-center justify-center gap-1.5 px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs rounded-lg border border-slate-700 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-950 focus:ring-slate-600">
+              <RefreshCcw className="w-3.5 h-3.5" /> Reset
             </button>
           </div>
         </div>
       </div>
 
-      {/* Footer */}
-      <div className="px-4 py-2 border-t border-slate-800 bg-slate-900/50 text-[10px] text-slate-400 flex justify-center gap-3">
+      <div className="px-4 py-2 border-t border-slate-800/50 bg-slate-900/50 text-xs text-slate-400 flex justify-center gap-1.5 flex-wrap">
         <a
           href="https://github.com/Ademking/FlashFuzz"
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center gap-1.5 hover:text-yellow-400 hover:underline transition">
-          <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" /> Star on
-          GitHub
+          className="flex items-center gap-1 hover:text-yellow-400 hover:underline transition">
+          Like it? ⭐ Star it on GitHub!
         </a>
         <span className="text-slate-600">•</span>
         <a
@@ -347,7 +337,7 @@ const Popup = () => {
           target="_blank"
           rel="noopener noreferrer"
           className="hover:text-yellow-400 hover:underline transition">
-          Created by Adem Kouki
+          Made by Adem Kouki
         </a>
       </div>
     </div>

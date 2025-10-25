@@ -27,7 +27,7 @@ export const config: PlasmoCSConfig = {
   run_at: "document_idle"
 }
 
-type FoundUrl = { url: string; size: number }
+type FoundUrl = { url: string; size: number; status: number }
 type FoundPort = { url: string; port: string; open: boolean }
 
 type MatchResult = {
@@ -84,7 +84,7 @@ function formatBytes(bytes: number): string {
   const k = 1024
   const sizes = ["B", "KB", "MB", "GB", "TB"]
   const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i]
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + sizes[i]
 }
 
 function findSecretsWithContext(jsText: string): MatchResult[] {
@@ -221,13 +221,24 @@ const checkUrlsIncremental = async (
           const response = await fetch(window.location.origin + "/" + url, {
             credentials: "omit" // Bypass browser asking for credentials every time 401 is encountered
           })
-          if (response.status === 200 || response.status === 401) {
+          if (
+            // 200-299,301,302,307,401,403,405,500
+            // TODO: Make this configurable later
+            response.ok ||
+            response.status === 301 ||
+            response.status === 302 ||
+            response.status === 307 ||
+            response.status === 401 ||
+            response.status === 403 ||
+            response.status === 405 ||
+            response.status === 500
+          ) {
             let size = parseInt(response.headers.get("content-length") || "")
             if (!size || isNaN(size)) {
               const blob = await response.clone().blob()
               size = blob.size
             }
-            foundUrls.push({ url, size })
+            foundUrls.push({ url, size, status: response.status })
           }
         } catch {
         } finally {
@@ -762,7 +773,7 @@ const Main = ({ wordlists }) => {
             {foundUrls.length > 0 && (
               <div className="max-h-[120px] overflow-y-auto rounded bg-gray-800 border border-gray-400/20 p-1 mt-1">
                 <ul className="space-y-1">
-                  {foundUrls.map(({ url, size }) => (
+                  {foundUrls.map(({ url, size, status }) => (
                     <li
                       key={url}
                       className="flex items-center justify-between px-1 py-0.5 rounded hover:bg-gray-400/10 transition-colors cursor-pointer"
@@ -771,24 +782,25 @@ const Main = ({ wordlists }) => {
                           window.location.origin + "/" + url,
                           "_blank"
                         )
-                      }
-                      tabIndex={0}
-                      role="button"
-                      aria-label={`Open ${url}`}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          window.open(
-                            window.location.origin + "/" + url,
-                            "_blank"
-                          )
-                        }
-                      }}>
+                      }>
                       <span className="text-gray-400 underline font-mono text-[11px] hover:text-yellow-200 transition-colors">
                         {url}
                       </span>
-                      <span className="text-yellow-200 ml-2 text-[10px] font-mono">
-                        {size ? formatBytes(size) : "N/A"}
-                      </span>
+                      <div className="flex items-center gap-2 ml-2">
+                        <span className="text-yellow-200 text-[10px] font-mono">
+                          {size ? formatBytes(size) : "N/A"}
+                        </span>
+                        <span
+                          className={`text-[10px] font-mono ${
+                            status >= 200 && status < 300
+                              ? "text-green-400"
+                              : status >= 400 && status < 500
+                                ? "text-yellow-400"
+                                : "text-red-400"
+                          }`}>
+                          [{status}]
+                        </span>
+                      </div>
                     </li>
                   ))}
                 </ul>
@@ -798,7 +810,7 @@ const Main = ({ wordlists }) => {
             <div className="pointer-events-auto select-text py-2">
               <div className="flex items-center flex-wrap gap-2">
                 <span className="text-xs font-semibold text-gray-400">
-                  Open Web Ports:
+                  Available Ports:
                 </span>
 
                 {foundPorts.filter((p) => p.open).length > 0 ? (
@@ -812,7 +824,16 @@ const Main = ({ wordlists }) => {
                           href={portUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center justify-center bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 font-mono text-[12px] px-3 py-1.5 rounded-full transition-colors min-w-[40px]">
+                          aria-label={`Open ${p.port} in new tab`}
+                          className="
+    inline-flex items-center justify-center
+    bg-blue-500/10 hover:bg-blue-500/20
+    text-blue-300 hover:text-blue-200
+    font-mono text-[10px] px-2 py-0.5 rounded-full
+    transition-colors duration-150 ease-in-out
+    focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-400/50
+    min-w-[32px]
+  ">
                           {p.port}
                         </a>
                       )
