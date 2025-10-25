@@ -23,6 +23,7 @@ Fast, lightweight, and designed for security engineers who want immediate reconn
 - Use custom wordlists or built-in example lists.
 - Concurrent requests with configurable batch size.
 - Scan JavaScript files loaded in each tab for likely secrets (API keys, tokens, AWS keys, etc.).
+- Port Quick Scanning: perform lightweight, configurable port checks against hosts discovered during fuzzing to identify open services, common ports, and quickly surface additional attack surface.
 - Export findings for further analysis or reporting.
 - Lightweight UI for quick runs and detailed results with request/response snapshots.
 - Open source and free to use.
@@ -55,7 +56,7 @@ You can install FlashFuzz either directly from the [Chrome Web Store](https://ch
 
 0. FlashFuzz must be enabled (Check the toggle in the top right corner of the extension).
 1. Open the tabs you want to scan (one or many).
-2. The extension will automatically run fuzzing and secret scanning on all open tabs.
+2. The extension will automatically run fuzzing / secret scanning / quick port scanning on all open tabs.
 
 ## Settings
 
@@ -69,6 +70,9 @@ You can adjust settings like wordlist, batch size, and secret scanning options i
 - Batch Size: Adjust the number of concurrent requests sent during fuzzing. (Default: 10 requests)
 - Interval between requests: Set a delay between each batch of requests to avoid overwhelming the target server (Default: 500ms).
 - Duplicate Response Filter: Enable this to filter out duplicate responses based on content length. This helps reduce noise in the results. (Default: 5 requests)
+- Wordlist: You can use the default wordlist or provide your own custom list.
+- Scan Ports: Checks a curated list of common service ports. You can use the default list or provide your own custom list.
+- Excluded Websites: List of websites where FlashFuzz should be inactive. Each entry should be on a new line.
 
 ## FAQ
 
